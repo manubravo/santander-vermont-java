@@ -23,7 +23,6 @@ public class CopiesService {
     @Async("asyncExecutor")
     public void copyFileAsync(MultipartFile file) {
         try {
-            this.logger.info("Start Main Thread");
             // Destino en la raíz del proyecto
             String destinationDirectory = System.getProperty("user.dir") + File.separator + "copies";
             File copiesDirectory = new File(destinationDirectory);
@@ -32,7 +31,6 @@ public class CopiesService {
             }
             // Nombre de archivo en la carpeta "copies"
             String fileName = destinationDirectory + File.separator + file.getOriginalFilename();
-            this.logger.info("Finish Main Thread");
             // Ejecución de la copia en un hilo independiente
             new Thread(()->this.readAndCopyFile(file, fileName)).start();
         } catch (Exception e) {

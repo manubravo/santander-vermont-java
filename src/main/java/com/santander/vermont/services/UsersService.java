@@ -53,13 +53,7 @@ public class UsersService {
         try (PrintWriter pw = response.getWriter()) {
             response.setContentType("text/csv");
             // Generate unique file name
-            String baseFileName = "users.csv";
-            String fileName = baseFileName;
-            int counter = 0;
-            do {
-                fileName = (counter == 0) ? baseFileName : "users(" + counter + ").csv";
-                counter++;
-            } while (new File(fileName).exists());
+            String fileName = "users.csv";
             this.logger.info("CSV name:" + fileName);
             response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + fileName);
             // Writing users data...
