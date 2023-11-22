@@ -24,8 +24,7 @@ public class CopiesController {
         if (file.isEmpty()) {
             return new ResponseEntity<>("No se proporcionó un archivo para copiar.", HttpStatus.BAD_REQUEST);
         }
-        // Llama al servicio para realizar la copia del archivo de manera asíncrona.
         this.service.copyFileAsync(file);
-        return new ResponseEntity<>("La copia del archivo se está realizando en segundo plano.", HttpStatus.OK);
+        return new ResponseEntity<>("Se ha copiado el archivo.", HttpStatus.OK);
     }
 }

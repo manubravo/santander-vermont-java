@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.santander.vermont.services.UsersService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -17,7 +18,7 @@ public class UsersController {
     private final UsersService service;
 
     @GetMapping()
-    public void getAll() {
-        this.service.getUsersCSV();
+    public void getAll(HttpServletResponse response) {
+        this.service.getUsersCSV(response);
     }
 }

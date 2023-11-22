@@ -1,19 +1,22 @@
 package com.santander.vermont.services;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.santander.vermont.dto.UsersDto;
 import com.santander.vermont.entities.UsersEntity;
 import com.santander.vermont.repositories.UsersRepository;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class UsersService {
     // Inyección de dependencias alternativo gracias a Lombok
     private final UsersRepository repository;
+    private Logger logger = LoggerFactory.getLogger(UsersService.class);
 
     // Mapping Entity to DTO
     private UsersDto mapEntityToDto(UsersEntity entity) {
@@ -38,25 +42,31 @@ public class UsersService {
     }
 
     // ListDto
+    @Transactional(readOnly = true) //Guarantee that the reading of users from the database is a read-only operation
     private List<UsersDto> getAllUsers() {
         List<UsersEntity> entityList = this.repository.findAll();
         return this.mapEntityListToDtoList(entityList);
     }
 
-    public void getUsersCSV() {
-        System.out.println("Creating CSV file...");
-        int counter = 0;
-        String baseFileName = "users.csv";
-        String fileName;
-        do {
-            fileName = (counter == 0) ? baseFileName : "users(" + counter + ").csv";
-            counter++;
-        } while (new File(fileName).exists());
-        try (PrintWriter pw = new PrintWriter(new FileWriter(fileName, true))) {
+    public void getUsersCSV(HttpServletResponse response) {
+        this.logger.info("Creating CSV file...");
+        try (PrintWriter pw = response.getWriter()) {
+            response.setContentType("text/csv");
+            // Generate unique file name
+            String baseFileName = "users.csv";
+            String fileName = baseFileName;
+            int counter = 0;
+            do {
+                fileName = (counter == 0) ? baseFileName : "users(" + counter + ").csv";
+                counter++;
+            } while (new File(fileName).exists());
+            this.logger.info("CSV name:" + fileName);
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + fileName);
+            // Writing users data...
             this.getAllUsers().forEach(user -> pw.println(user));
-            System.out.println("You have created a CSV file: " + fileName);
-        } catch (IOException e) {
-            e.printStackTrace();
+            this.logger.info("CSV file generated and downloaded successfully");
+        } catch (Exception e) {
+            logger.error("Error while generating and downloading CSV file: " + e.getMessage());
         }
     }
 }
