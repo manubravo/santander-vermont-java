@@ -1,5 +1,7 @@
 package com.santander.vermont.controllers;
 
+import java.io.IOException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +22,7 @@ public class CopiesController {
     private final CopiesService service;
 
     @PostMapping()
-    public ResponseEntity<String> copyFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> copyFile(@RequestParam("file") MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             return new ResponseEntity<>("No se proporcionó un archivo para copiar.", HttpStatus.BAD_REQUEST);
         }

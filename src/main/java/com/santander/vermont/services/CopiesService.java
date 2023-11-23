@@ -2,12 +2,12 @@ package com.santander.vermont.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.Exception;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,35 +19,40 @@ import lombok.RequiredArgsConstructor;
 public class CopiesService {
 
     private Logger logger = LoggerFactory.getLogger(CopiesService.class);
+    private final TaskExecutor taskExecutor;
 
     @Async("asyncExecutor")
-    public void copyFileAsync(MultipartFile file) {
-        try {
-            // Destino en la raíz del proyecto
-            String destinationDirectory = System.getProperty("user.dir") + File.separator + "copies";
-            File copiesDirectory = new File(destinationDirectory);
-            if (!copiesDirectory.exists()) {
-                copiesDirectory.mkdirs();
-            }
-            // Nombre de archivo en la carpeta "copies"
-            String fileName = destinationDirectory + File.separator + file.getOriginalFilename();
-            // Ejecución de la copia en un hilo independiente
-            new Thread(()->this.readAndCopyFile(file, fileName)).start();
-        } catch (Exception e) {
-            this.logger.error("Error during file copying: " + e.getMessage());
+    public void copyFileAsync(MultipartFile file) throws IOException {
+        // Destino en la raíz del proyecto
+        String destinationDirectory = System.getProperty("user.dir") + File.separator + "copies";
+        File copiesDirectory = new File(destinationDirectory);
+        if (!copiesDirectory.exists()) {
+            copiesDirectory.mkdirs();
         }
-    }
+        // Nombre de archivo en la carpeta "copies"
+        String fileName = destinationDirectory + File.separator + file.getOriginalFilename();
     
-    private void readAndCopyFile(MultipartFile file, String fileName) {
+        // Ejecución de la lectura y la escritura en hilos independientes
+        this.taskExecutor.execute(() -> {
+            this.readFile(file);
+        });
+        this.taskExecutor.execute(() -> {
+            try {
+                this.writeToFile(file.getBytes(), fileName);
+            } catch (IOException e) {
+                this.logger.error("Error during file writing: " + e.getMessage());
+            }
+        });
+    }
+
+    private void readFile(MultipartFile file) {
         try {
             this.logger.info("Start Read Thread");
             // Lee el contenido del archivo
-            byte[] fileBytes = file.getBytes();
-            // Inicia la escritura del archivo en un hilo independiente
-            new Thread(() -> writeToFile(fileBytes, fileName)).start();
+            file.getBytes();
             this.logger.info("Finish Read Thread");
         } catch (IOException e) {
-            this.logger.error("Error during file reading: " + e.getMessage());
+            this.logger.error("Error during file reading: " + e.getMessage() + "\n");
         }
     }
 
@@ -58,9 +63,9 @@ public class CopiesService {
             Path filePath = Path.of(fileName);
             Files.write(filePath, fileBytes);
             this.logger.info("File copied to: " + fileName);
-            this.logger.info("Finish Write Thread");
+            this.logger.info("Finish Write Thread\n");
         } catch (IOException e) {
-            this.logger.error("Error during file writing: " + e.getMessage());
+            this.logger.error("Error during file writing: " + e.getMessage() + "\n");
         }
     }
 }
